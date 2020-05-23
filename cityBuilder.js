@@ -1,7 +1,10 @@
 const ANIMATION_SPEED = 10;
+const SHOW_LABELS = false
+
 let MOUSEDOWN = false;
 let CMDDOWN = false;
 let SHAPE_IN_PROGRESS = false;
+
 let shapes = [];
 let inProgressRectangle = {}
 
@@ -49,12 +52,12 @@ let currentShape = objectCopy(defaultShape);
 
 // vanishingPoints
 let vp1 = {
-  x: 5,
+  x: 0,
   y: HEIGHT/2,
 }
 
 let vp2 = {
-  x: WIDTH - 5,
+  x: WIDTH,
   y: HEIGHT/2,
 }
 
@@ -156,8 +159,25 @@ function calculateSlope(pt1, pt2){
   return slope;
 }
 
+/*TODO: understand what the fuuuuck this is doing*/
 function intersectionOfTwoLines(point1, point2, point3, point4){
-  const slope1 = calculateSlope()
+    var s, s1_x, s1_y, s2_x, s2_y, t;
+    s1_x = point2.x - point1.x;
+    s1_y = point2.y - point1.y;
+    s2_x = point4.x - point3.x;
+    s2_y = point4.y - point3.y;
+
+    s = (-s1_y * (point1.x - point3.x) + s1_x * (point1.y - point3.y)) / (-s2_x * s1_y + s1_x * s2_y);
+    t = (s2_x * (point1.y - point3.y) - s2_y * (point1.x - point3.x)) / (-s2_x * s1_y + s1_x * s2_y);
+    if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+
+      const intersectionPoint = {
+        x: point1.x + (t * s1_x),
+        y: point1.y + (t * s1_y)
+      };
+      return intersectionPoint;
+    }
+    return null;
 }
 
 /* DRAWING  */ 
@@ -172,12 +192,12 @@ setMouseCoordinates = (event) => {
 /* shape */
 
 setShapeStart = (event) => {
+  currentShape.color = getColorBasedOnDistance(event.offsetX, event.offsetY);
   currentShape.one.x = event.offsetX;
   currentShape.one.y = event.offsetY;
 }
 
 saveShape = () => {
-  console.log("SAVING!");
   shapes.push(objectCopy(currentShape));
   SHAPE_IN_PROGRESS = false;
   resetShape();
@@ -220,7 +240,7 @@ drawInProgressShape = () => {
     }
   }
 
-  if(SHAPE_IN_PROGRESS){
+  if(SHAPE_IN_PROGRESS && !CMDDOWN){
     const mouse = currentMouseCoordinates;
 
     currentShape.one = inProgressRectangle.one;
@@ -238,22 +258,21 @@ drawInProgressShape = () => {
       y: calculateY(currentShape.four, vp2, mouse.x),
     }
 
-    // currentShape.seven = {
-    //   x: calculateY(currentShape.six, vp1, mouse.x),,
-    //   y: ,
-    // }
+    currentShape.seven = {
+      x: intersectionOfTwoLines(vp1, { x: WIDTH, y: calculateY(vp1, currentShape.six, WIDTH)}, vp2, {x: 0, y: calculateY(vp2, currentShape.one, 0)}).x,
+      y: intersectionOfTwoLines(vp1, { x: WIDTH, y: calculateY(vp1, currentShape.six, WIDTH)}, vp2, {x: 0, y: calculateY(vp2, currentShape.one, 0)}).y,
+    }
 
-    // currentShape.eight = {
-    //   x: ,
-    //   y: ,
-    // }
+    currentShape.eight = {
+      x: currentShape.seven.x,
+      y: calculateY(currentShape.five, vp1, currentShape.seven.x),
+    }
   
     drawPerspectiveLines(currentShape.five.x, currentShape.five.y);
     drawPerspectiveLines(currentShape.six.x, currentShape.six.y);
   }
 
   if(MOUSEDOWN || SHAPE_IN_PROGRESS){
-    //starting point
     drawPerspectiveLines(currentShape.one.x, currentShape.one.y);   
     drawPerspectiveLines(currentShape.one.x, currentShape.two.y);
     drawPerspectiveLines(currentShape.three.x, currentShape.three.y);
@@ -280,38 +299,58 @@ drawFinishedShapes = () => {
 }
 
 drawShape = (shape) => {
-  line(shape.one.x, shape.one.y, shape.two.x, shape.two.y);
-  line(shape.two.x, shape.two.y, shape.three.x, shape.three.y);
-  line(shape.three.x, shape.three.y, shape.four.x, shape.four.y);
-  line(shape.four.x, shape.four.y, shape.one.x, shape.one.y);
+  line(shape.one.x, shape.one.y, shape.two.x, shape.two.y, shape.color);
+  line(shape.two.x, shape.two.y, shape.three.x, shape.three.y, shape.color);
+  line(shape.three.x, shape.three.y, shape.four.x, shape.four.y, shape.color);
+  line(shape.four.x, shape.four.y, shape.one.x, shape.one.y, shape.color);
 
-  circle(shape.one.x, shape.one.y, 4, "#59ffec");
-  circle(shape.two.x, shape.two.y, 4, "#59ffec");
-  circle(shape.three.x, shape.three.y, 4, "#59ffec");
-  circle(shape.four.x, shape.four.y, 4, "#59ffec");
+  if(SHOW_LABELS){
+    circle(shape.one.x, shape.one.y, 4, "#59ffec");
+    circle(shape.two.x, shape.two.y, 4, "#59ffec");
+    circle(shape.three.x, shape.three.y, 4, "#59ffec");
+    circle(shape.four.x, shape.four.y, 4, "#59ffec");
 
-  text("1", shape.one.x - 10, shape.one.y, 14, "#59ffec", true);
-  text("2", shape.two.x - 10, shape.two.y, 14, "#59ffec", true);
-  text("3", shape.three.x - 10, shape.three.y, 14, "#59ffec", true);
-  text("4", shape.four.x - 10, shape.four.y, 14, "#59ffec", true);
-
-  if(shape.five.x){
-    line(shape.five.x, shape.five.y, shape.six.x, shape.six.y);
-    // line(shape.six.x, shape.six.y, shape.seven.x, shape.seven.y);
-    // line(shape.seven.x, shape.seven.y, shape.eight.x, shape.eight.y);
-    // line(shape.eight.x, shape.eight.y, shape.five.x, shape.five.y);
-
-    circle(shape.five.x, shape.five.y, 4, "#59ffec");
-    circle(shape.six.x, shape.six.y, 4, "#59ffec");
-    //circle(shape.seven.x, shape.seven.y, 4, "#59ffec");
-    // circle(shape.eight.x, shape.eight.y, 4, "#59ffec");
-
-    text("5", shape.five.x - 10, shape.five.y, 14, "#59ffec", true);
-    text("6", shape.six.x - 10, shape.six.y, 14, "#59ffec", true);
-    //text("7", shape.seven.x - 10, shape.seven.y, 14, "#59ffec", true);
-    // text("8", shape.eight.x - 10, shape.eight.y, 14, "#59ffec", true);
+    text("1", shape.one.x - 10, shape.one.y, 14, "#59ffec", true);
+    text("2", shape.two.x - 10, shape.two.y, 14, "#59ffec", true);
+    text("3", shape.three.x - 10, shape.three.y, 14, "#59ffec", true);
+    text("4", shape.four.x - 10, shape.four.y, 14, "#59ffec", true);
   }
 
+  if(shape.five.x){
+    line(shape.five.x, shape.five.y, shape.six.x, shape.six.y, shape.color);
+    line(shape.six.x, shape.six.y, shape.seven.x, shape.seven.y, shape.color);
+    line(shape.seven.x, shape.seven.y, shape.eight.x, shape.eight.y, shape.color);
+    line(shape.eight.x, shape.eight.y, shape.five.x, shape.five.y, shape.color);
+
+    if(SHOW_LABELS){
+      circle(shape.five.x, shape.five.y, 4, "#59ffec");
+      circle(shape.six.x, shape.six.y, 4, "#59ffec");
+      circle(shape.seven.x, shape.seven.y, 4, "#59ffec");
+      circle(shape.eight.x, shape.eight.y, 4, "#59ffec");
+
+      text("5", shape.five.x - 10, shape.five.y, 14, "#59ffec", true);
+      text("6", shape.six.x - 10, shape.six.y, 14, "#59ffec", true);
+      text("7", shape.seven.x - 10, shape.seven.y, 14, "#59ffec", true);
+      text("8", shape.eight.x - 10, shape.eight.y, 14, "#59ffec", true);      
+    }
+
+    line(shape.five.x, shape.five.y, shape.three.x, shape.three.y, shape.color);
+    line(shape.six.x, shape.six.y, shape.four.x, shape.four.y, shape.color);
+    line(shape.seven.x, shape.seven.y, shape.one.x, shape.one.y, shape.color);
+    line(shape.eight.x, shape.eight.y, shape.two.x, shape.two.y, shape.color);
+
+  }
+
+}
+
+getColorBasedOnDistance = (x, y) => {
+  const distanceToVpOne = distanceBetween(x, y, vp1.x, vp1.y);
+  const distanceToVpTwo = distanceBetween(x, y, vp2.x, vp2.y);
+
+  console.log((distanceToVpOne + distanceToVpTwo)/2);
+
+
+  return "white";
 }
 
 /* DEBUGGER CODE*/
