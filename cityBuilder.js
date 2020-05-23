@@ -7,16 +7,26 @@ let currentMouseCoordinates = {
   y: null,
 }
 
-let currentLineSegment = {
-  start: {
+const defaultShape = {
+  one:{
     x: null,
     y: null,
   },
-  end: {
+  two:{
+    x: null,
+    y: null,
+  },
+  three:{
+    x: null,
+    y: null,
+  },
+  four:{
     x: null,
     y: null,
   }
 }
+
+let currentShape = objectCopy(defaultShape);
 
 // vanishingPoints
 let vp1 = {
@@ -38,7 +48,8 @@ init = () => {
 draw = () => {
     clear();
     drawBackground();
-    drawCurrentPerspectiveLines();
+    drawVanishingPoints();
+    drawInProgressShape();
     drawExistingLines();
 
     updateDebugFields();
@@ -51,15 +62,13 @@ registerEventListeners = () => {
   canvas.addEventListener('mousedown', (e) => {
     MOUSEDOWN = true;
     setMouseCoordinates(e);
-    setLineSegmentStart(e);
-    console.log("MOUSE DOWN");
+    setShapeStart(e);
   });
 
   canvas.addEventListener('mouseup', (e) => {
     MOUSEDOWN = false;
-    setLineSegmentEnd(e);
     resetMouseCoordinates();
-    resetLineSegment();
+    setShapeEnd();
   });
 
   canvas.addEventListener('mousemove', (e) => {
@@ -71,23 +80,36 @@ registerEventListeners = () => {
 
 /* UTILITY FUNCTIONS */
 
-distanceBetween = (x1, y1, x2, y2) => {
+function distanceBetween(x1, y1, x2, y2){
     return Math.sqrt(Math.pow((x1-x2),2) + Math.pow((y1-y2),2));
 }
 
-getRandomElement = (array) => {
+function getRandomElement(array){
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 }
 
 
-randomBetween = (min, max) => {
+function randomBetween(min, max){
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-objectCopy = (obj) => {
+function objectCopy(obj){
   return JSON.parse(JSON.stringify(obj))
 }
+
+
+function calculateY(point, vp, correspondingX){
+  const slope = calculateSlope(point, vp);
+  const deltaX = Math.abs(correspondingX - point.x);
+  return point.y - deltaX * slope;
+}
+
+function calculateSlope(pt1, pt2){
+  const slope = (pt1.y - pt2.y)/(pt1.x - pt2.x)
+  return slope;
+}
+
 /* DRAWING  */ 
 
 
@@ -102,39 +124,55 @@ resetMouseCoordinates = () => {
   currentMouseCoordinates.y = null;
 }
 
-/* mouse coordinates */
+/* shape */
 
-setLineSegmentStart = (event) => {
-  currentLineSegment.start.x = event.offsetX;
-  currentLineSegment.start.y = event.offsetY;
+setShapeStart = (event) => {
+  currentShape.one.x = event.offsetX;
+  currentShape.one.y = event.offsetY;
 }
 
-setLineSegmentEnd = (event) => {
-  currentLineSegment.end.x = currentLineSegment.start.x;
-  currentLineSegment.end.y = event.offsetY;
-  shapes.push(objectCopy(currentLineSegment));
+setShapeEnd = (event) => {
+  shapes.push(objectCopy(currentShape));
+  resetShape();
 }
 
-resetLineSegment = () => {
-  currentLineSegment.start.x = null;
-  currentLineSegment.start.y = null;
-  currentLineSegment.end.x = null;
-  currentLineSegment.end.y = null;
+resetShape = () => {
+  currentShape = objectCopy(defaultShape);
 }
 
 /* drawing */
 
-drawCurrentPerspectiveLines = () => {
+drawInProgressShape = () => {
   if(MOUSEDOWN){
-    mouse = currentMouseCoordinates;
-    
+    const mouse = currentMouseCoordinates;
+    const currentLineEnd = {
+      x: currentShape.one.x, 
+      y: mouse.y,
+    }
+
+    const vp = mouse.x < currentShape.one.x ? vp1 : vp2
+
     //starting point
-    drawPerspectiveLines(currentLineSegment.start.x, currentLineSegment.start.y);
+    drawPerspectiveLines(currentShape.one.x, currentShape.one.y);
     //current point    
-    drawPerspectiveLines(currentLineSegment.start.x, mouse.y);
+    drawPerspectiveLines(currentShape.one.x, mouse.y);
 
+    currentShape.two = {
+      x: currentShape.one.x,
+      y: mouse.y,
+    }
 
-    line(currentLineSegment.start.x, currentLineSegment.start.y, currentLineSegment.start.x, mouse.y);
+    currentShape.three = {
+      x: mouse.x,
+      y: calculateY(currentLineEnd, vp, mouse.x),
+    }
+
+    currentShape.four = {
+      x: mouse.x,
+      y: calculateY(currentShape.one, vp, mouse.x),
+    }
+
+    drawShape(currentShape);
   }
 }
 
@@ -143,18 +181,31 @@ drawPerspectiveLines = (x, y) => {
   perspectiveLine(x, y, vp2.x, vp2.y);
 }
 
+drawVanishingPoints = () => {
+  circle(vp1.x, vp1.y, 3, "orange");
+  circle(vp2.x, vp2.y, 3, "orange");
+}
+
 drawExistingLines = () => {
   shapes.forEach((shape) => {
-    line(shape.start.x, shape.start.y, shape.end.x, shape.end.y);
-    drawPerspectiveLines(shape.start.x, shape.start.y);
-    drawPerspectiveLines(shape.end.x, shape.end.y);
+    drawShape(shape);
+    //drawPerspectiveLines(shape.one.x, shape.one.y);
+    //drawPerspectiveLines(shape.two.x, shape.two.y);
   })
+}
+
+drawShape = (shape) => {
+  line(shape.one.x, shape.one.y, shape.two.x, shape.two.y);
+  line(shape.two.x, shape.two.y, shape.three.x, shape.three.y);
+  line(shape.three.x, shape.three.y, shape.four.x, shape.four.y);
+  line(shape.four.x, shape.four.y, shape.one.x, shape.one.y);
 }
 
 /* DEBUGGER CODE*/
 
 updateDebugFields = () => {
   document.getElementById("mouse-coords").innerText = `${currentMouseCoordinates.x}, ${currentMouseCoordinates.y}`;
+  document.getElementById("current-shape").innerText = JSON.stringify(currentShape);
 }
 
 init(); 
