@@ -1,5 +1,5 @@
 const ANIMATION_SPEED = 10;
-const SHOW_LABELS = false
+const SHOW_LABELS = false;
 
 let MOUSEDOWN = false;
 let CMDDOWN = false;
@@ -192,7 +192,7 @@ setMouseCoordinates = (event) => {
 /* shape */
 
 setShapeStart = (event) => {
-  currentShape.color = getColorBasedOnDistance(event.offsetX, event.offsetY);
+  currentShape.color = "white";
   currentShape.one.x = event.offsetX;
   currentShape.one.y = event.offsetY;
 }
@@ -338,19 +338,8 @@ drawShape = (shape) => {
     line(shape.six.x, shape.six.y, shape.four.x, shape.four.y, shape.color);
     line(shape.seven.x, shape.seven.y, shape.one.x, shape.one.y, shape.color);
     line(shape.eight.x, shape.eight.y, shape.two.x, shape.two.y, shape.color);
-
   }
 
-}
-
-getColorBasedOnDistance = (x, y) => {
-  const distanceToVpOne = distanceBetween(x, y, vp1.x, vp1.y);
-  const distanceToVpTwo = distanceBetween(x, y, vp2.x, vp2.y);
-
-  console.log((distanceToVpOne + distanceToVpTwo)/2);
-
-
-  return "white";
 }
 
 /* DEBUGGER CODE*/
