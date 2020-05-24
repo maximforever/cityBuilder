@@ -1,9 +1,23 @@
 const ANIMATION_SPEED = 10;
-const SHOW_LABELS = false;
+const SHOW_LABELS = true;
+const LABEL_AS_NUMBER = {
+  "one": 1,
+  "two": 2,
+  "three": 3,
+  "four": 4,
+  "five": 5,
+  "six": 6,
+  "seven": 7,
+  "eight": 8,
+}
+
+const SNAP_MOUSE_DISTANCE = 20;
 
 let MOUSEDOWN = false;
 let CMDDOWN = false;
 let SHAPE_IN_PROGRESS = false;
+
+
 
 let shapes = [];
 let inProgressRectangle = {}
@@ -14,35 +28,35 @@ let currentMouseCoordinates = {
 }
 
 const defaultShape = {
-  one:{
+  one: {
     x: null,
     y: null,
   },
-  two:{
+  two: {
     x: null,
     y: null,
   },
-  three:{
+  three: {
     x: null,
     y: null,
   },
-  four:{
+  four: {
     x: null,
     y: null,
   },
-  five:{
+  five: {
     x: null,
     y: null,
   },
-  six:{
+  six: {
     x: null,
     y: null,
   },
-  seven:{
+  seven: {
     x: null,
     y: null,
   },
-  eight:{
+  eight: {
     x: null,
     y: null,
   }
@@ -53,29 +67,29 @@ let currentShape = objectCopy(defaultShape);
 // vanishingPoints
 let vp1 = {
   x: 0,
-  y: HEIGHT/2,
+  y: HEIGHT / 2,
 }
 
 let vp2 = {
   x: WIDTH,
-  y: HEIGHT/2,
+  y: HEIGHT / 2,
 }
 
 init = () => {
-    registerEventListeners();
-    draw();
-    setInterval(draw, ANIMATION_SPEED);
+  registerEventListeners();
+  draw();
+  setInterval(draw, ANIMATION_SPEED);
 }
 
 draw = () => {
-    clear();
-    drawBackground();
-    drawVanishingPoints();
+  clear();
+  drawBackground();
+  drawVanishingPoints();
 
-    drawInProgressShape();
-    drawFinishedShapes();
+  drawInProgressShape();
+  drawFinishedShapes();
 
-    updateDebugFields();
+  updateDebugFields();
 }
 
 
@@ -85,24 +99,24 @@ registerEventListeners = () => {
   canvas.addEventListener('mousedown', (e) => {
     MOUSEDOWN = true;
 
-    if(!SHAPE_IN_PROGRESS){
+    if (!SHAPE_IN_PROGRESS) {
       setShapeStart(e);
     }
-    
+
     setMouseCoordinates(e);
   });
 
   canvas.addEventListener('mouseup', (e) => {
     MOUSEDOWN = false;
 
-    if(CMDDOWN){
+    if (CMDDOWN) {
       resetShape();
-    } else if(!SHAPE_IN_PROGRESS) {
+    } else if (!SHAPE_IN_PROGRESS) {
       SHAPE_IN_PROGRESS = true;
       saveInProgressRectangle();
     } else {
       saveShape();
-    }   
+    }
   });
 
   canvas.addEventListener('mousemove', (e) => {
@@ -110,13 +124,13 @@ registerEventListeners = () => {
   });
 
   window.addEventListener('keydown', (e) => {
-    if(e.which === 91){
+    if (e.which === 91) {
       CMDDOWN = true
     }
   });
 
   window.addEventListener('keyup', (e) => {
-    if(e.which === 91 && CMDDOWN){
+    if (e.which === 91 && CMDDOWN) {
       CMDDOWN = false;
     }
   });
@@ -126,26 +140,26 @@ registerEventListeners = () => {
 
 /* UTILITY FUNCTIONS */
 
-function distanceBetween(x1, y1, x2, y2){
-    return Math.sqrt(Math.pow((x1-x2),2) + Math.pow((y1-y2),2));
+function distanceBetween(x1, y1, x2, y2) {
+  return Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
 }
 
-function getRandomElement(array){
+function getRandomElement(array) {
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 }
 
 
-function randomBetween(min, max){
+function randomBetween(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function objectCopy(obj){
+function objectCopy(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
 
-function calculateY(point, vp, correspondingX){
+function calculateY(point, vp, correspondingX) {
   const slope = calculateSlope(point, vp);
   const differenceInX = correspondingX - point.x;
   const modifier = vp.x < point.x ? 1 : -1
@@ -154,47 +168,71 @@ function calculateY(point, vp, correspondingX){
   return point.y - differenceInX * (modifier * slope);
 }
 
-function calculateSlope(pt1, pt2){
-  const slope = (pt2.y - pt1.y)/Math.abs(pt2.x - pt1.x);
+function calculateSlope(pt1, pt2) {
+  const slope = (pt2.y - pt1.y) / Math.abs(pt2.x - pt1.x);
   return slope;
 }
 
-/*TODO: understand what the fuuuuck this is doing*/
-function intersectionOfTwoLines(point1, point2, point3, point4){
-    var s, s1_x, s1_y, s2_x, s2_y, t;
-    s1_x = point2.x - point1.x;
-    s1_y = point2.y - point1.y;
-    s2_x = point4.x - point3.x;
-    s2_y = point4.y - point3.y;
-
-    s = (-s1_y * (point1.x - point3.x) + s1_x * (point1.y - point3.y)) / (-s2_x * s1_y + s1_x * s2_y);
-    t = (s2_x * (point1.y - point3.y) - s2_y * (point1.x - point3.x)) / (-s2_x * s1_y + s1_x * s2_y);
-    if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-
-      const intersectionPoint = {
-        x: point1.x + (t * s1_x),
-        y: point1.y + (t * s1_y)
-      };
-      return intersectionPoint;
-    }
-    return null;
+function objectsAreIdentical(obj1, obj2) {
+  return JSON.stringify(obj1) === JSON.stringify(obj2);
 }
 
-/* DRAWING  */ 
+/*TODO: understand what the fuuuuck this is doing*/
+function intersectionOfTwoLines(point1, point2, point3, point4) {
+  var s, s1_x, s1_y, s2_x, s2_y, t;
+  s1_x = point2.x - point1.x;
+  s1_y = point2.y - point1.y;
+  s2_x = point4.x - point3.x;
+  s2_y = point4.y - point3.y;
+
+  s = (-s1_y * (point1.x - point3.x) + s1_x * (point1.y - point3.y)) / (-s2_x * s1_y + s1_x * s2_y);
+  t = (s2_x * (point1.y - point3.y) - s2_y * (point1.x - point3.x)) / (-s2_x * s1_y + s1_x * s2_y);
+  if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+
+    const intersectionPoint = {
+      x: point1.x + (t * s1_x),
+      y: point1.y + (t * s1_y)
+    };
+    return intersectionPoint;
+  }
+  return null;
+}
+
+/* DRAWING  */
 
 
 /* mouse coordinates */
 setMouseCoordinates = (event) => {
   currentMouseCoordinates.x = event.offsetX;
   currentMouseCoordinates.y = event.offsetY;
+
+  snapMouseToExistingPoints(event.offsetX, event.offsetY);
 }
+
+// TODO: this is not performant and not pretty
+snapMouseToExistingPoints = (mouseX, mouseY) => {
+  if (!currentlyDrawing()) {
+    shapes.forEach((shape) => {
+      for (point in shape) {
+        if (typeof(shape[point].x) !== "undefined") {
+          if (distanceBetween(mouseX, mouseY, shape[point].x, shape[point].y) < SNAP_MOUSE_DISTANCE) {
+            currentMouseCoordinates.x = shape[point].x;
+            currentMouseCoordinates.y = shape[point].y;
+            return;
+          }
+        }
+      }
+    });
+  }
+}
+
 
 /* shape */
 
 setShapeStart = (event) => {
   currentShape.color = "white";
-  currentShape.one.x = event.offsetX;
-  currentShape.one.y = event.offsetY;
+  currentShape.one.x = currentMouseCoordinates.x;
+  currentShape.one.y = currentMouseCoordinates.y;
 }
 
 saveShape = () => {
@@ -220,7 +258,7 @@ resetShape = () => {
 /* drawing */
 
 drawInProgressShape = () => {
-  if(MOUSEDOWN){
+  if (MOUSEDOWN) {
     const mouse = currentMouseCoordinates;
     const vp = mouse.x < currentShape.one.x ? vp1 : vp2
 
@@ -240,7 +278,7 @@ drawInProgressShape = () => {
     }
   }
 
-  if(SHAPE_IN_PROGRESS && !CMDDOWN){
+  if (SHAPE_IN_PROGRESS && !CMDDOWN) {
     const mouse = currentMouseCoordinates;
 
     currentShape.one = inProgressRectangle.one;
@@ -259,21 +297,21 @@ drawInProgressShape = () => {
     }
 
     currentShape.seven = {
-      x: intersectionOfTwoLines(vp1, { x: WIDTH, y: calculateY(vp1, currentShape.six, WIDTH)}, vp2, {x: 0, y: calculateY(vp2, currentShape.one, 0)}).x,
-      y: intersectionOfTwoLines(vp1, { x: WIDTH, y: calculateY(vp1, currentShape.six, WIDTH)}, vp2, {x: 0, y: calculateY(vp2, currentShape.one, 0)}).y,
+      x: intersectionOfTwoLines(vp1, { x: WIDTH, y: calculateY(vp1, currentShape.six, WIDTH) }, vp2, { x: 0, y: calculateY(vp2, currentShape.one, 0) }).x,
+      y: intersectionOfTwoLines(vp1, { x: WIDTH, y: calculateY(vp1, currentShape.six, WIDTH) }, vp2, { x: 0, y: calculateY(vp2, currentShape.one, 0) }).y,
     }
 
     currentShape.eight = {
       x: currentShape.seven.x,
       y: calculateY(currentShape.five, vp1, currentShape.seven.x),
     }
-  
+
     drawPerspectiveLines(currentShape.five.x, currentShape.five.y);
     drawPerspectiveLines(currentShape.six.x, currentShape.six.y);
   }
 
-  if(MOUSEDOWN || SHAPE_IN_PROGRESS){
-    drawPerspectiveLines(currentShape.one.x, currentShape.one.y);   
+  if (currentlyDrawing()) {
+    drawPerspectiveLines(currentShape.one.x, currentShape.one.y);
     drawPerspectiveLines(currentShape.one.x, currentShape.two.y);
     drawPerspectiveLines(currentShape.three.x, currentShape.three.y);
     drawPerspectiveLines(currentShape.four.x, currentShape.four.y);
@@ -304,35 +342,12 @@ drawShape = (shape) => {
   line(shape.three.x, shape.three.y, shape.four.x, shape.four.y, shape.color);
   line(shape.four.x, shape.four.y, shape.one.x, shape.one.y, shape.color);
 
-  if(SHOW_LABELS){
-    circle(shape.one.x, shape.one.y, 4, "#59ffec");
-    circle(shape.two.x, shape.two.y, 4, "#59ffec");
-    circle(shape.three.x, shape.three.y, 4, "#59ffec");
-    circle(shape.four.x, shape.four.y, 4, "#59ffec");
 
-    text("1", shape.one.x - 10, shape.one.y, 14, "#59ffec", true);
-    text("2", shape.two.x - 10, shape.two.y, 14, "#59ffec", true);
-    text("3", shape.three.x - 10, shape.three.y, 14, "#59ffec", true);
-    text("4", shape.four.x - 10, shape.four.y, 14, "#59ffec", true);
-  }
-
-  if(shape.five.x){
+  if (shape.five.x) {
     line(shape.five.x, shape.five.y, shape.six.x, shape.six.y, shape.color);
     line(shape.six.x, shape.six.y, shape.seven.x, shape.seven.y, shape.color);
     line(shape.seven.x, shape.seven.y, shape.eight.x, shape.eight.y, shape.color);
     line(shape.eight.x, shape.eight.y, shape.five.x, shape.five.y, shape.color);
-
-    if(SHOW_LABELS){
-      circle(shape.five.x, shape.five.y, 4, "#59ffec");
-      circle(shape.six.x, shape.six.y, 4, "#59ffec");
-      circle(shape.seven.x, shape.seven.y, 4, "#59ffec");
-      circle(shape.eight.x, shape.eight.y, 4, "#59ffec");
-
-      text("5", shape.five.x - 10, shape.five.y, 14, "#59ffec", true);
-      text("6", shape.six.x - 10, shape.six.y, 14, "#59ffec", true);
-      text("7", shape.seven.x - 10, shape.seven.y, 14, "#59ffec", true);
-      text("8", shape.eight.x - 10, shape.eight.y, 14, "#59ffec", true);      
-    }
 
     line(shape.five.x, shape.five.y, shape.three.x, shape.three.y, shape.color);
     line(shape.six.x, shape.six.y, shape.four.x, shape.four.y, shape.color);
@@ -340,6 +355,23 @@ drawShape = (shape) => {
     line(shape.eight.x, shape.eight.y, shape.two.x, shape.two.y, shape.color);
   }
 
+  if (SHOW_LABELS) {
+    displayShapeLabels(shape);
+  }
+}
+
+displayShapeLabels = (shape) => {
+  for (point in shape) {
+    if (typeof(shape[point].x) !== "undefined" && shape[point].x) {
+      const color = (objectsAreIdentical(currentMouseCoordinates, shape[point]) && !currentlyDrawing()) ? "red" : "#59ffec";
+      circle(shape[point].x, shape[point].y, 4, color);
+      text(LABEL_AS_NUMBER[point], shape[point].x - 10, shape[point].y, 14, "#59ffec", true);
+    }
+  }
+}
+
+function currentlyDrawing() {
+  return MOUSEDOWN || SHAPE_IN_PROGRESS
 }
 
 /* DEBUGGER CODE*/
@@ -350,4 +382,4 @@ updateDebugFields = () => {
   document.getElementById("current-shape").innerText = JSON.stringify(currentShape, undefined, 2);
 }
 
-init(); 
+init();

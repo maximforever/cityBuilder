@@ -6,6 +6,14 @@
 <body>
   <canvas height="800" width="800" id="canvas"></canvas>
 
+  <div id="controls">
+    <input type="checkbox" id="show-labels" name="labels" value="Bike">
+    <label for="labels">show labels</label><br>
+
+    <input type="checkbox" id="show-wireframe" name="wireframe" value="Bike">
+    <label for="wireframe">show wireframe</label><br>
+  </div>
+
   <div id="debug-info">
     <p>
       mouse: <span id="mouse-coords"></span>
@@ -14,7 +22,7 @@
     <p>
       shape in progress: <span id="in-progress"></span>
     </p>
-    
+
     <p>
       currentShape: <pre id="current-shape"></pre>
     </p>
