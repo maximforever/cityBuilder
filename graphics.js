@@ -23,6 +23,17 @@ function circle(x,y,r, color) {
     ctx.fill();
 }
 
+function emptyCircle(x,y,r, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2, false);               // start at 0, end at Math.PI*2
+    ctx.closePath();
+    ctx.fillStyle = "rgba(0,0,0,0)";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fill();
+}
+
 function rect(x,y,w,h, color) {
     ctx.beginPath();
     ctx.rect(x,y,w,h);

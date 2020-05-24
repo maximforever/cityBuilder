@@ -11,7 +11,7 @@ const LABEL_AS_NUMBER = {
   "eight": 8,
 }
 
-const SNAP_MOUSE_DISTANCE = 20;
+const SNAP_MOUSE_DISTANCE = 12;
 
 let MOUSEDOWN = false;
 let CMDDOWN = false;
@@ -363,7 +363,13 @@ drawShape = (shape) => {
 displayShapeLabels = (shape) => {
   for (point in shape) {
     if (typeof(shape[point].x) !== "undefined" && shape[point].x) {
-      const color = (objectsAreIdentical(currentMouseCoordinates, shape[point]) && !currentlyDrawing()) ? "red" : "#59ffec";
+      const hoveringOverPoint = (objectsAreIdentical(currentMouseCoordinates, shape[point]) && !currentlyDrawing());
+      const color = hoveringOverPoint ? "#f58c31" : "#59ffec";
+
+      if(hoveringOverPoint){
+        emptyCircle(shape[point].x, shape[point].y, SNAP_MOUSE_DISTANCE, color)
+      }
+
       circle(shape[point].x, shape[point].y, 4, color);
       text(LABEL_AS_NUMBER[point], shape[point].x - 10, shape[point].y, 14, "#59ffec", true);
     }
