@@ -14,7 +14,8 @@ const LABEL_AS_NUMBER = {
 const SNAP_MOUSE_DISTANCE = 12;
 
 let MOUSEDOWN = false;
-let CMDDOWN = false;
+let CMD_DOWN = false;
+let ZED_DOWN = false;
 let SHAPE_IN_PROGRESS = false;
 
 
@@ -109,9 +110,7 @@ registerEventListeners = () => {
   canvas.addEventListener('mouseup', (e) => {
     MOUSEDOWN = false;
 
-    if (CMDDOWN) {
-      resetShape();
-    } else if (!SHAPE_IN_PROGRESS) {
+    if (!SHAPE_IN_PROGRESS) {
       SHAPE_IN_PROGRESS = true;
       saveInProgressRectangle();
     } else {
@@ -125,13 +124,30 @@ registerEventListeners = () => {
 
   window.addEventListener('keydown', (e) => {
     if (e.which === 91) {
-      CMDDOWN = true
+      CMD_DOWN = true;
+    }
+
+    if (e.which === 90) {
+      ZED_DOWN = true;
+    }
+
+    if(CMD_DOWN && ZED_DOWN){
+      if(!drawInProgressShape()){
+        undoLastShape();
+        // prevent this from happening multiple times
+        CMD_DOWN = false;
+        ZED_DOWN = false;
+      }
     }
   });
 
   window.addEventListener('keyup', (e) => {
-    if (e.which === 91 && CMDDOWN) {
-      CMDDOWN = false;
+    if (e.which === 91 && CMD_DOWN) {
+      CMD_DOWN = false;
+    }
+
+    if (e.which === 90 && ZED_DOWN) {
+      ZED_DOWN = false;
     }
   });
 
@@ -278,7 +294,7 @@ drawInProgressShape = () => {
     }
   }
 
-  if (SHAPE_IN_PROGRESS && !CMDDOWN) {
+  if (SHAPE_IN_PROGRESS) {
     const mouse = currentMouseCoordinates;
 
     currentShape.one = inProgressRectangle.one;
@@ -378,6 +394,10 @@ displayShapeLabels = (shape) => {
 
 function currentlyDrawing() {
   return MOUSEDOWN || SHAPE_IN_PROGRESS
+}
+
+function undoLastShape() {
+  shapes.pop();
 }
 
 /* DEBUGGER CODE*/
